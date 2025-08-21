@@ -720,3 +720,10 @@ class Vehicle(dict):
     def delete(self, command, headers):
         """Utility command to delete active service entry"""
         return self.connection.delete(command, f"{self.connection.base.IF9}/vehicles/{self.vin}", headers)
+
+
+# adding this file
+
+    def delete(self, command, headers):
+        """Utility command to delete active service entry"""
+        return self.connection.delete(command, f"{self.connection.base.IF9}/vehicles/{self.vin}", headers)
