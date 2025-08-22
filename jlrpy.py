@@ -62,10 +62,14 @@ class Connection:
         else:
             self.base = BaseURLs
 
+        # FIX: Validate device_id if supplied, else generate securely
         if device_id:
+            if not isinstance(device_id, str) or not device_id.isalnum() or len(device_id) > 64:
+                raise ValueError("Invalid device_id supplied.")
             self.device_id = device_id
         else:
-            self.device_id = str(uuid.uuid4())
+            import secrets
+            self.device_id = secrets.token_urlsafe(32)
 
         if refresh_token:
             self.oauth = {
@@ -148,12 +152,17 @@ class Connection:
 
     def _set_header(self, access_token):
         """Set HTTP header fields"""
+        import os
+        app_secret = os.environ.get("JLRPY_APP_SECRET")
+        if not app_secret:
+            raise RuntimeError("JLRPY_APP_SECRET environment variable not set.")
         self.head = {
             "Authorization": f"Bearer {access_token}",
             "X-Device-Id": self.device_id,
             "x-telematicsprogramtype": "jlrpy",
             "x-App-Id": "ICR_JAGUAR_ANDROID",
-            "x-App-Secret": "7bf6f544-1926-4714-8066-ceceb40d538d",
+            # FIX: Do NOT hardcode secrets; load from environment variable
+            "x-App-Secret": app_secret,
             "Content-Type": "application/json"}
 
     def _authenticate(self, data=None):
@@ -223,6 +232,8 @@ class Connection:
         headers = self.head.copy()
         headers["Accept"] = "application/json"
         return self.get("en", f"{self.base.IF9}/geocode/reverse/{lat}/{lon}", headers)
+
+# FIX EXPLANATION: The fix removes the hardcoded 'x-App-Secret' from the source code and instead loads it from an environment variable (JLRPY_APP_SECRET), following best practices for secret management. This prevents accidental exposure of sensitive credentials in code repositories. Additionally, the device_id is validated for type, length, and allowed characters, and if not supplied, is generated securely using the secrets module. This mitigates the risk of device_id abuse or predictable device identifiers.
 
 
 class Vehicle(dict):
